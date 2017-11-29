@@ -1,5 +1,9 @@
 import asyncio
-from . import GeneralMachine
+
+if __name__ != '__main__':
+	from . import GeneralMachine
+else: 
+	from general_machine import GeneralMachine	
 
 class GeneralServer(GeneralMachine):
 	""" This server listen for a messages"""
@@ -43,6 +47,7 @@ class GeneralServer(GeneralMachine):
 
 def main():
 	S = GeneralServer()
+	S.start()
 
 if __name__ == '__main__':
 	main()		            

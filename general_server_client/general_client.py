@@ -1,5 +1,8 @@
 import asyncio
-from . import GeneralMachine
+if __name__ != '__main__':
+	from . import GeneralMachine
+else:
+	from general_machine import GeneralMachine	
 
 class GeneralClient(GeneralMachine):
 	"""This client just send a data to server """
@@ -25,7 +28,7 @@ class GeneralClient(GeneralMachine):
 
 def main():
 	GC = GeneralClient()
-	GC.send('MSG')
+	GC.send(b'MSG')
 
 if __name__ == '__main__':
 	main()
