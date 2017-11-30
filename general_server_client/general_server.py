@@ -1,14 +1,22 @@
 import asyncio
+import argparse
 
 if __name__ != '__main__':
 	from . import GeneralMachine
+	from . import GeneralClient
 else: 
-	from general_machine import GeneralMachine	
+	from general_machine import GeneralMachine
+	from general_client import GeneralClient	
 
 class GeneralServer(GeneralMachine):
 	""" This server listen for a messages"""
 	def __init__(self, **kwargs):
 		super().__init__(**kwargs)
+		parser = argparse.ArgumentParser()
+		parser.add_argument("-s", "--stop", dest="stop", action='store_true', help="stop running server", default=False)
+		args = parser.parse_args()
+		if args.stop:
+			self.stop()
 
 	def start(self):
 		self.loop = asyncio.get_event_loop()
@@ -20,7 +28,12 @@ class GeneralServer(GeneralMachine):
 		    self.loop.run_forever()
 		except KeyboardInterrupt as exc:
 			self.logger.error('an exception has been recieved {}'.format(exc))
-			self.stop()		
+			self.terminate()
+
+	def stop(self):
+		Terminator = GeneralClient()
+		Terminator.send(b'stop().')
+		quit(0)
 
 	def on_fetch(self, msg):
 		pass		
@@ -35,15 +48,16 @@ class GeneralServer(GeneralMachine):
 	    addr = writer.get_extra_info('peername')
 	    self.logger.info("Received %r from %r" % (message, addr))
 	    if(message == b'stop().'):
-	    	self.stop()
+	    	return self.terminate()
+
 	    writer.close()
 	    self.on_fetch(message)
 
-	def stop(self):
+	def terminate(self):
 		self.logger.info('server stopping.')
 		self.server.close()
 		self.loop.stop() 
-		self.logger.info('server stopped') 	
+		self.logger.info('server stopped')
 
 def main():
 	S = GeneralServer()
