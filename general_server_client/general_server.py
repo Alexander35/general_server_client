@@ -1,5 +1,9 @@
 import asyncio
 import argparse
+import platform
+if platform.system() != 'Windows':
+	from daemonize import Daemonize
+
 
 if __name__ != '__main__':
 	from . import GeneralMachine
@@ -13,14 +17,20 @@ class GeneralServer(GeneralMachine):
 	def __init__(self, **kwargs):
 		super().__init__(**kwargs)
 		parser = argparse.ArgumentParser()
-		parser.add_argument("-s", "--stop", dest="stop", action='store_true', help="stop running server", default=False)
+		parser.add_argument("-s", "--stop", dest="stop", action='store_true', help="send stop signal to running server from instant client", default=False)
+		parser.add_argument("-d", "--daemon", dest="daemon", action='store_true', help="run server as daemon", default=False)
 		args = parser.parse_args()
 		if args.stop:
 			self.stop()
 
+		if args.daemon and platform.system() != 'Windows':
+			self.daemonize()
+		else:
+			self.on_initialize()		
+
 	def start(self):
 		self.loop = asyncio.get_event_loop()
-		coro = asyncio.start_server(self.fetch, self.config['SERVER']['Host'], self.config['SERVER']['Port'], loop=self.loop)
+		coro = asyncio.start_server(self.fetch, self.get_config('SERVER','Host'), self.get_config('SERVER','Port'), loop=self.loop)
 		self.server = self.loop.run_until_complete(coro)
 
 		self.logger.info('Serving on {}'.format(self.server.sockets[0].getsockname()))
@@ -36,7 +46,18 @@ class GeneralServer(GeneralMachine):
 		quit(0)
 
 	def on_fetch(self, msg):
-		pass		
+		"""Event handler when the data received.
+		You should to implement it in the child class"""
+		pass
+
+	def daemonize(self):
+		daemon = Daemonize(app=self.get_config('DAEMON','app'), pid=self.get_config('DAEMON','pid'), action=self.on_initialize, chdir=self.get_config('DAEMON','chdir'))
+		daemon.start()
+
+	def on_initialize(self):
+		"""Event handler when it initialize
+		You should to implement it in the child class"""
+		pass	
 
 	async def fetch(self, reader, writer):
 	    data = b''
